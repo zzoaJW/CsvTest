@@ -8,16 +8,20 @@ import android.os.Bundle
 import android.os.Environment
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.testcsv.databinding.ActivityMainBinding
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -29,9 +33,9 @@ class MainActivity : AppCompatActivity() {
         checkPermissions()
 
         // csv 데이터
-        // 파일명 지정
         val data = getCsvData()
-        val csvFileName = "csvFileTest.csv"
+        // 파일명 지정 (csvFileTest_yyyyMMdd_HHmmss.csv)
+        val csvFileName = getCsvFileName()
 
         binding.btnCsvDownload.setOnClickListener {
             // csv 파일 생성
@@ -51,15 +55,10 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) { // 안드로이드 버전이 M 이상인 경우
             val permission = android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 
-//            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) { // WRITE_EXTERNAL_STORAGE 권한이 부여되어있는 상태가 아닌 경우
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) { // WRITE_EXTERNAL_STORAGE 권한이 부여되어있는 상태가 아닌 경우
                 ActivityCompat.requestPermissions(this, arrayOf(permission), 500) // 500은 임의 지정한 코드값
-
-//            } else { // 권한이 이미 허용된 경우
-//                createEmptyTxtFile("emptyFile.txt")
-//            }
-        } /* else { // 안드로이드 버전이 M 이하인 경우
-            createEmptyTxtFile("emptyFile.txt")
-        } */
+            }
+        }
     }
 
     // onRequestPermissionsResult 메소드 추가
@@ -71,12 +70,8 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         if (requestCode == 500) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) { // 권한이 허용된 경우
-//                createEmptyTxtFile("emptyFile.txt") // 왜 2번하고있지?
-
-            } else { // 권한이 거부된 경우
+            if (grantResults.isNotEmpty() && grantResults[0] != PackageManager.PERMISSION_GRANTED) { // 권한이 거부된 경우
                 Toast.makeText(this, "권한을 허용해주세요", Toast.LENGTH_LONG).show()
-
             }
         }
     }
@@ -84,10 +79,26 @@ class MainActivity : AppCompatActivity() {
 
     fun getCsvData() : ArrayList<String> {
         val data = ArrayList<String>()
-        data.add("1,John,Doe")
-        data.add("2,Jane,Smith")
+        // 첫번째 추가 요소 : 결과지의 컬럼명들
+        data.add("DATETIME,CAL1,CAL2,CAL3,CAL4")
+        data.add("2020-01-01 09:50:00,VAL1,VAL2,VAL3,VAL4")
+        data.add("2020-03-01 23:00:00,VAL1,VAL2,VAL3,VAL4")
+        data.add("2021-02-01 13:20:00,VAL1,VAL2,VAL3,VAL4")
+        data.add("2022-05-17 06:30:00,VAL1,VAL2,VAL3,VAL4")
+        data.add("2023-06-23 17:00:00,VAL1,VAL2,VAL3,VAL4")
 
         return data
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getCsvFileName() : String {
+        val currentTime = LocalDateTime.now()
+        val formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
+        val formattedCurrentTime = currentTime.format(formatter)
+
+        val fileName = "csvFileTest_$formattedCurrentTime.csv"
+
+        return fileName
     }
 
     fun createCsvFile(context: Context, data: ArrayList<String>, fileName: String) {
